@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marks Sorting System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-icon">M</span><span>Marks<span class="accent">Sort</span></span></div>
+    <span class="top-label">DSA MINI PROJECT</span>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="eyebrow"><span class="dot"></span> STUDENT MARKS MANAGER</div>
+      <h1>Sort smarter.<br><span>Learn algorithms.</span></h1>
+      <p>Organize student marks with Bubble Sort or Selection Sort. Compare the list before and after sorting.</p>
+      <div class="algorithm-pills"><span>↕ Bubble Sort</span><span>↗ Selection Sort</span><span>↑ Ascending / ↓ Descending</span></div>
+    </section>
+
+    {% if error %}<div class="alert">⚠ {{ error }}</div>{% endif %}
+
+    <form method="POST" id="sort-form">
+      <section class="panel">
+        <div class="section-heading">
+          <div><span class="step">01</span><h2>Student marks</h2></div>
+          <button type="button" class="button secondary small" id="add-row">＋ Add student</button>
+        </div>
+        <p class="muted">Enter student names and marks out of 100.</p>
+        <div class="table-wrap">
+          <table class="input-table">
+            <thead><tr><th>NO.</th><th>STUDENT NAME</th><th>MARKS / 100</th><th></th></tr></thead>
+            <tbody id="student-rows">
+              {% for student in rows %}
+              <tr>
+                <td class="row-number">{{ loop.index }}</td>
+                <td><input name="student_name" type="text" value="{{ student.name }}" placeholder="Student name" maxlength="60"></td>
+                <td><input name="student_marks" type="number" value="{{ student.marks|int if student.marks is number and student.marks == student.marks|int else student.marks }}" min="0" max="100" step="any" placeholder="0–100" required></td>
+                <td><button type="button" class="remove-row" aria-label="Remove student" title="Remove student">×</button></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel options-panel">
+        <div class="section-heading"><div><span class="step">02</span><h2>Sorting settings</h2></div></div>
+        <div class="options-grid">
+          <div class="field"><label for="algorithm">ALGORITHM</label>
+            <select name="algorithm" id="algorithm">
+              <option value="bubble" {% if algorithm == 'bubble' %}selected{% endif %}>Bubble Sort</option>
+              <option value="selection" {% if algorithm == 'selection' %}selected{% endif %}>Selection Sort</option>
+            </select>
+          </div>
+          <div class="field"><label for="order">SORT ORDER</label>
+            <select name="order" id="order">
+              <option value="ascending" {% if order == 'ascending' %}selected{% endif %}>Ascending — lowest to highest</option>
+              <option value="descending" {% if order == 'descending' %}selected{% endif %}>Descending — highest to lowest</option>
+            </select>
+          </div>
+        </div>
+        <button class="button primary sort-button" type="submit">Sort marks <span>→</span></button>
+      </section>
+    </form>
+
+    {% if sorted_rows %}
+    <section class="results">
+      <div class="result-title"><div><div class="eyebrow"><span class="dot"></span> SORT COMPLETE</div><h2>Your results</h2></div><span class="result-badge">{{ 'Bubble Sort' if algorithm == 'bubble' else 'Selection Sort' }}</span></div>
+      <div class="compare-grid">
+        <div class="panel list-panel">
+          <div class="list-heading"><div><span class="list-icon neutral">≋</span><div><h3>Before sorting</h3><p>Original input order</p></div></div><span class="count">{{ rows|length }} students</span></div>
+          <div class="result-table-wrap"><table><thead><tr><th>#</th><th>Student</th><th>Marks</th></tr></thead><tbody>
+          {% for student in rows %}<tr><td>{{ loop.index }}</td><td>{{ student.name }}</td><td><strong>{{ student.marks|int if student.marks is number and student.marks == student.marks|int else student.marks }}</strong></td></tr>{% endfor %}
+          </tbody></table></div>
+        </div>
+        <div class="panel list-panel sorted-panel">
+          <div class="list-heading"><div><span class="list-icon success">↕</span><div><h3>After sorting</h3><p>{{ 'Lowest to highest' if order == 'ascending' else 'Highest to lowest' }}</p></div></div><span class="count">{{ sorted_rows|length }} students</span></div>
+          <div class="result-table-wrap"><table><thead><tr><th>Rank</th><th>Student</th><th>Marks</th></tr></thead><tbody>
+          {% for student in sorted_rows %}<tr><td><span class="rank">{{ loop.index }}</span></td><td>{{ student.name }}</td><td><strong class="mark-value">{{ student.marks|int if student.marks is number and student.marks == student.marks|int else student.marks }}</strong></td></tr>{% endfor %}
+          </tbody></table></div>
+        </div>
+      </div>
+      <div class="note"><strong>Algorithm used:</strong> {{ 'Bubble Sort compares adjacent marks and swaps them when they are in the wrong order.' if algorithm == 'bubble' else 'Selection Sort repeatedly selects the smallest or largest remaining mark and places it in the next position.' }}</div>
+    </section>
+    {% endif %}
+
+    <footer><span>MarksSort · DSA Mini Project</span><span>Built with Python + Flask</span></footer>
+  </main>
+  <script>
+    const tbody = document.getElementById('student-rows');
+    const addButton = document.getElementById('add-row');
+
+    function updateNumbers() {
+      [...tbody.rows].forEach((row, index) => row.cells[0].textContent = index + 1);
+    }
+    function attachRemove(button) {
+      button.addEventListener('click', () => {
+        if (tbody.rows.length > 1) {
+          button.closest('tr').remove();
+          updateNumbers();
+        } else {
+          alert('At least one student row is required.');
+        }
+      });
+    }
+    document.querySelectorAll('.remove-row').forEach(attachRemove);
+    addButton.addEventListener('click', () => {
+      const row = document.createElement('tr');
+      row.innerHTML = `<td class="row-number"></td>
+        <td><input name="student_name" type="text" placeholder="Student name" maxlength="60"></td>
+        <td><input name="student_marks" type="number" min="0" max="100" step="any" placeholder="0–100" required></td>
+        <td><button type="button" class="remove-row" aria-label="Remove student" title="Remove student">×</button></td>`;
+      tbody.appendChild(row);
+      attachRemove(row.querySelector('.remove-row'));
+      updateNumbers();
+      row.querySelector('input').focus();
+    });
+  </script>
+</body>
+</html>
